@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <SFML/Graphics.hpp>
+
 
 using namespace std;
 
@@ -83,7 +85,7 @@ int main() {
     }
 
     cout << sudokuBoards.sudokuBoards[1].unsolved[0][0];
-    cout << sudokuBoards.sudokuBoards[1].unsolved[0][0];
+    cout << sudokuBoards.sudokuBoards[1].solved[0][0];
 
     inputFile.close();
 
