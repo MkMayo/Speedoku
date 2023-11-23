@@ -82,6 +82,9 @@ int main() {
         printBoard(sudokuBoards.sudokuBoards[1].solved);
     }
 
+    cout << sudokuBoards.sudokuBoards[1].unsolved[0][0];
+    cout << sudokuBoards.sudokuBoards[1].unsolved[0][0];
+
     inputFile.close();
 
     return 0;
