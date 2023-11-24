@@ -1,59 +1,93 @@
+#include <SFML/Graphics.hpp>
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include <string>
-#include <vector>
 #include <SFML/Graphics.hpp>
-
-
 using namespace std;
 
 class SudokuBoards {
 public:
     class SudokuBoard {
     public:
-        vector<vector<char>> unsolved;
-        vector<vector<char>> solved;
+        std::vector<std::vector<char>> unsolved;
+        std::vector<std::vector<char>> solved;
 
-        SudokuBoard(string unsolvedStr, string solvedStr) {
+        SudokuBoard(const std::string& unsolvedStr, const std::string& solvedStr) {
             unsolved = stringToVector(unsolvedStr);
             solved = stringToVector(solvedStr);
         }
 
-        vector<vector<char>> stringToVector(string str) {
-            vector<vector<char>> result;
+        std::vector<std::vector<char>> stringToVector(const std::string& str) {
+            std::vector<std::vector<char>> result;
 
             for (int i = 0; i < 9; ++i) {
-                result.push_back(vector<char>(str.begin() + i * 9, str.begin() + (i + 1) * 9));
+                result.push_back(std::vector<char>(str.begin() + i * 9, str.begin() + (i + 1) * 9));
             }
 
             return result;
         }
     };
 
-    vector<SudokuBoard> sudokuBoards;
-
+    std::vector<SudokuBoard> sudokuBoards; // Vector to store multiple Sudoku boards
 };
 
-void printBoard(vector<vector<char>> board) {
-    for (auto row : board) {
-        for (char cell : row) {
-            cout << cell << " ";
-        }
-        cout << std::endl;
+void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<char>>& board) {
+    sf::Font font;
+    if (!font.loadFromFile("../arial.ttf")) {
+        std::cerr << "Error loading font." << std::endl;
+        return;
     }
 
-    cout << endl;
+    sf::Text text;
+    text.setFont(font);
+    text.setCharacterSize(40); // Adjust the font size
+    text.setFillColor(sf::Color::Black);
+
+    float cellSize = 60.0f;
+    float boldLineThickness = 9.0f; // Thickness of the bold lines
+
+    // Draw bold lines around 3x3 squares
+    sf::RectangleShape boldLine(sf::Vector2f(cellSize * 3, boldLineThickness));
+    boldLine.setFillColor(sf::Color::Black);
+
+    for (size_t i = 0; i < 9; ++i) {
+        for (size_t j = 0; j < 9; ++j) {
+            // Draw bold lines around 3x3 squares
+
+
+            // Draw cell
+            sf::RectangleShape cell(sf::Vector2f(cellSize, cellSize));
+            cell.setFillColor(sf::Color::White);
+            cell.setOutlineThickness(3.0f);
+            cell.setOutlineColor(sf::Color::Black);
+            cell.setPosition(static_cast<float>(j) * cellSize, static_cast<float>(i) * cellSize);
+            window.draw(cell);
+
+            // Draw number
+
+                text.setString(board[i][j]);
+                sf::FloatRect textRect = text.getLocalBounds();
+                text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+                text.setPosition(static_cast<float>(j) * cellSize + cellSize / 2.0f, static_cast<float>(i) * cellSize + cellSize / 2.0f);
+                window.draw(text);
+
+        }
+    }
 }
 
+
 int main() {
+    sf::RenderWindow window(sf::VideoMode(600, 600), "Sudoku Board");
+
+    SudokuBoards sudokuBoards; // Create an instance of SudokuBoards to store multiple boards
+
     ifstream inputFile("../sudokuNew.csv");
 
     if (!inputFile.is_open()) {
         cerr << "Error opening the file." << endl;
         return 1;
     }
-
-    SudokuBoards sudokuBoards;
 
     string line;
     while (getline(inputFile, line)) {
@@ -75,22 +109,22 @@ int main() {
         }
     }
 
-    if (!sudokuBoards.sudokuBoards.empty()) {
-        // Garbage values on sudokuBoards.sudokuBoards[0] so start from 1
-        cout << "Unsolved Board 1:" << std::endl;
-        printBoard(sudokuBoards.sudokuBoards[1].unsolved);
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+        }
 
-        cout << "Solved Board 1:" << std::endl;
-        printBoard(sudokuBoards.sudokuBoards[1].solved);
+        window.clear(sf::Color::White);
+
+        if (!sudokuBoards.sudokuBoards.empty()) {
+            drawSudokuBoard(window, sudokuBoards.sudokuBoards[99999].unsolved);
+        }
+
+        window.display();
     }
-
-    cout << sudokuBoards.sudokuBoards[1].unsolved[0][0];
-    cout << sudokuBoards.sudokuBoards[1].solved[0][0];
-
-    inputFile.close();
 
     return 0;
 }
-
-
-
