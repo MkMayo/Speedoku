@@ -199,7 +199,7 @@ int main() {
                     solveSudoku(window, solvedBoard, col, row);
                     drawSudokuBoard(window, solvedBoard, row, col);
                     window.display();
-                    sf::sleep(sf::milliseconds(100)); // adjust the delay as needed
+                    sf::sleep(sf::milliseconds(100)); // adjust the delay as neede
                 }
             }
         }
