@@ -3,8 +3,28 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <unordered_map>
 #include <SFML/Graphics.hpp>
 using namespace std;
+
+class TextureManager{
+public:
+    unordered_map<string, sf::Texture*> texture_map;
+    TextureManager(){
+        sf::Texture* texture_1 = new sf::Texture;
+        texture_map.emplace("icon", texture_1);
+        texture_map["icon"]->loadFromFile("../sudoku_icon.png");
+
+        sf::Texture* texture_2 = new sf::Texture;
+        texture_map.emplace("speedoku_text", texture_2);
+        texture_map["speedoku_text"]->loadFromFile("../speedoku_text.png");
+
+        sf::Texture* texture_3 = new sf::Texture;
+        texture_map.emplace("start_icon", texture_3);
+        texture_map["start_icon"]->loadFromFile("../start_icon.png");
+    }
+};
+
 
 class SudokuBoards {
 public:
@@ -32,8 +52,10 @@ public:
     vector<SudokuBoard> sudokuBoards; // vector to store multiple Sudoku boards
 };
 
+
 void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<char>>& board, int currentRow, int currentCol) {
     sf::Font font;
+
     if (!font.loadFromFile("../arial.ttf")) {
         std::cerr << "Error loading font." << std::endl;
         return;
@@ -78,6 +100,7 @@ void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<cha
         }
     }
 }
+//clone of other board function to test multiple boards
 
 // Check if it's safe to place the digit at board[row][col]
 bool isSafe(vector<vector<char>>& board, int row, int col, char digit) {
@@ -142,7 +165,6 @@ void printBoard(const vector<vector<char>>& board) {
 }
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(600, 600), "Sudoku Board");
 
     SudokuBoards sudokuBoards; // create an instance of SudokuBoards to store multiple boards
 
@@ -173,8 +195,70 @@ int main() {
         }
     }
 
-    window.clear(sf::Color::White);
 
+    sf::RenderWindow welcome_window(sf::VideoMode(800, 800), "Welcome");
+    welcome_window.clear(sf::Color::White);
+
+    TextureManager manager; //texture manager object
+
+    sf::Sprite icon;
+    icon.setTexture(*manager.texture_map["icon"]);
+    auto texture_temp = *manager.texture_map["icon"];
+    icon.setOrigin(sf::Vector2f(texture_temp.getSize().x / 2, texture_temp.getSize().y / 2));
+    icon.setScale(0.65f, 0.65f);
+    icon.setPosition(400, 375);
+
+
+
+    sf::Sprite speedoku_text;
+    speedoku_text.setTexture(*manager.texture_map["speedoku_text"]);
+    texture_temp = *manager.texture_map["speedoku_text"];
+    speedoku_text.setOrigin(sf::Vector2f(texture_temp.getSize().x / 2, texture_temp.getSize().y / 2));
+    speedoku_text.setScale(1.25f, 1.25f);
+    speedoku_text.setPosition(400, 125);
+
+
+    sf::Sprite start_icon;
+    start_icon.setTexture(*manager.texture_map["start_icon"]);
+    texture_temp = *manager.texture_map["start_icon"];
+    start_icon.setOrigin(sf::Vector2f(texture_temp.getSize().x / 2, texture_temp.getSize().y / 2));
+    start_icon.setScale(0.65f, 0.65f);
+    start_icon.setPosition(400, 675);
+
+
+
+    while(welcome_window.isOpen()){ //welcome window loop
+
+        sf::Event event;
+        while (welcome_window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                welcome_window.close();
+            }
+        }
+        if(event.type == sf::Event::MouseButtonPressed){
+            sf::Mouse mouse;
+            bool left;
+            auto coordinate = mouse.getPosition(welcome_window);
+
+            int x_size = start_icon.getTexture()->getSize().x * start_icon.getScale().x;
+            int y_size = start_icon.getTexture()->getSize().y * start_icon.getScale().y;
+            int y_position = start_icon.getPosition().y;
+            if(coordinate.x >= 400 - (x_size / 2) and coordinate.x <= 400 + (x_size / 2)){ //if start button pressed
+                if(coordinate.y >= y_position - (y_size / 4) and coordinate.y <= y_position + (y_size / 4)){
+                    welcome_window.close();
+                }
+            }
+        }
+
+        welcome_window.clear(sf::Color::White);
+        welcome_window.draw(icon);
+        welcome_window.draw(start_icon);
+        welcome_window.draw(speedoku_text);
+        welcome_window.display();
+    }
+
+    sf::RenderWindow window(sf::VideoMode(1080, 1080), "Sudoku Board");
+    window.clear(sf::Color::White);
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -182,7 +266,7 @@ int main() {
                 window.close();
             }
         }
-
+        window.clear(); //keeps board from flashing
         if (!sudokuBoards.sudokuBoards.empty()) {
             int boardIndex = 1;
             vector<vector<char>> unsolvedBoard = sudokuBoards.sudokuBoards[boardIndex].unsolved;
@@ -192,7 +276,6 @@ int main() {
             printBoard(unsolvedBoard);
 
             vector<vector<char>> solvedBoard = unsolvedBoard;  // create a copy of the unsolved board
-
 
             for (int row = 0; row < 9; ++row) {
                 for (int col = 0; col < 9; ++col) {
