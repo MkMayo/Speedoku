@@ -13,15 +13,15 @@ public:
     TextureManager(){
         sf::Texture* texture_1 = new sf::Texture;
         texture_map.emplace("icon", texture_1);
-        texture_map["icon"]->loadFromFile("../sudoku_icon.png");
+        texture_map["icon"]->loadFromFile("../../assets/sudoku_icon.png");
 
         sf::Texture* texture_2 = new sf::Texture;
         texture_map.emplace("speedoku_text", texture_2);
-        texture_map["speedoku_text"]->loadFromFile("../speedoku_text.png");
+        texture_map["speedoku_text"]->loadFromFile("../../assets/speedoku_text.png");
 
         sf::Texture* texture_3 = new sf::Texture;
         texture_map.emplace("start_icon", texture_3);
-        texture_map["start_icon"]->loadFromFile("../start_icon.png");
+        texture_map["start_icon"]->loadFromFile("../../assets/start_icon.png");
     }
 };
 
@@ -56,7 +56,7 @@ public:
 void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<char>>& board, int currentRow, int currentCol) {
     sf::Font font;
 
-    if (!font.loadFromFile("../arial.ttf")) {
+    if (!font.loadFromFile("../../assets/arial.ttf")) {
         std::cerr << "Error loading font." << std::endl;
         return;
     }
