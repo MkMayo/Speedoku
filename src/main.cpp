@@ -3,55 +3,146 @@
 #include <vector>
 #include <fstream>
 #include <string>
-#include <unordered_map>
-#include <SFML/Graphics.hpp>
+#include <map>
+#include <tuple>
+#include "SudokuBoard.h"
 using namespace std;
 
-class TextureManager{
-public:
-    unordered_map<string, sf::Texture*> texture_map;
-    TextureManager(){
-        sf::Texture* texture_1 = new sf::Texture;
-        texture_map.emplace("icon", texture_1);
-        texture_map["icon"]->loadFromFile("../../assets/sudoku_icon.png");
+// Function to load a single texture
+void loadTexture(const string& textureName, map<string, sf::Texture>& textures) {
+    sf::Texture texture;
+    textures.emplace(textureName, texture);
+    textures[textureName].loadFromFile("assets/" + textureName + ".png");
+}
 
-        sf::Texture* texture_2 = new sf::Texture;
-        texture_map.emplace("speedoku_text", texture_2);
-        texture_map["speedoku_text"]->loadFromFile("../../assets/speedoku_text.png");
+// Function to initialize all textures
+map<string, sf::Texture> initializeTextures() {
+    map<string, sf::Texture> textures;
+    
+    loadTexture("sudoku_icon", textures);
+    loadTexture("speedoku_text", textures);
+    loadTexture("start_icon", textures);
 
-        sf::Texture* texture_3 = new sf::Texture;
-        texture_map.emplace("start_icon", texture_3);
-        texture_map["start_icon"]->loadFromFile("../../assets/start_icon.png");
+    return textures;
+}
+
+// Function to initialize all Sudoku boards in the dataset
+vector<SudokuBoard> initializeBoards() {
+    vector<SudokuBoard> boards;
+    
+    ifstream inputFile("assets/dataset.csv");
+
+    if(!inputFile.is_open()) {
+        cerr << "Error opening the file." << endl;
+        return boards;
     }
-};
 
-
-class SudokuBoards {
-public:
-    class SudokuBoard {
-    public:
-        vector<std::vector<char>> unsolved;
-        vector<std::vector<char>> solved;
-
-        SudokuBoard(const string& unsolvedStr, const string& solvedStr) {
-            unsolved = stringToVector(unsolvedStr);
-            solved = stringToVector(solvedStr);
-        }
-
-        vector<std::vector<char>> stringToVector(const string& str) {
-            vector<vector<char>> result;
-
-            for (int i = 0; i < 9; ++i) {
-                result.push_back(vector<char>(str.begin() + i * 9, str.begin() + (i + 1) * 9));
+    string line;
+    while(getline(inputFile, line)) {
+        int commaPos = line.find(',');
+        if(commaPos != string::npos) {
+            string unsolved = line.substr(0, commaPos);
+            if(unsolved.size() == 81) {
+                SudokuBoard board(unsolved);
+                boards.push_back(board);
             }
-
-            return result;
+        } else {
+            std::cerr << "Invalid line format in CSV file." << std::endl;
         }
-    };
+    }
 
-    vector<SudokuBoard> sudokuBoards; // vector to store multiple Sudoku boards
-};
+    return boards;
+}
 
+// Merge for merge sort
+vector<tuple<int, int, vector<int>>> merge(vector<tuple<int, int, vector<int>>> left, vector<tuple<int, int, vector<int>>> right) {
+    unsigned int li = 0;
+    unsigned int ri = 0;
+    vector<tuple<int, int, vector<int>>> out;
+    while(li < left.size() || ri < right.size()) {
+        if(li == left.size()) {
+            for(unsigned int i = ri; i < right.size(); i++) {
+                out.push_back(right[i]);
+            }
+            break;
+        } else if(ri == right.size()) {
+            for(unsigned int i = li; i < left.size(); i++) {
+                out.push_back(left[i]);
+            }
+            break;
+        } else if(get<2>(left[li]).size() < get<2>(right[ri]).size()) {
+            out.push_back(left[li]);
+            li++;
+        } else {
+            out.push_back(right[ri]);
+            ri++;
+        }
+    }
+    return out;
+}
+
+// Merge sort for Cross-Hatching approach
+vector<tuple<int, int, vector<int>>> mergeSort(vector<tuple<int, int, vector<int>>> vec) {
+    if(vec.size() <= 1) {
+        return vec;
+    }
+    unsigned int halfPoint = 0;
+    if(vec.size() % 2 == 0) {
+        halfPoint = vec.size() / 2;
+    } else {
+        halfPoint = (vec.size() - 1) / 2;
+    }
+    vector<tuple<int, int, vector<int>>> left;
+    vector<tuple<int, int, vector<int>>> right;
+    for(unsigned int i = 0; i < vec.size(); i++) {
+        if(i < halfPoint) {
+            left.push_back(vec[i]);
+        } else {
+            right.push_back(vec[i]);
+        }
+    }
+    left = mergeSort(left);
+    right = mergeSort(right);
+    return merge(left, right);
+}
+
+// Solves the board using Backtracking
+bool solveBacktracking(SudokuBoard& board) {
+    vector<int> coords = board.findNext();
+    if(coords.empty()) return true;
+    for(unsigned int i = 1; i <= 9; i++) {
+        if(board.isSafe(i, coords[0], coords[1])) {
+            board.place(i, coords[0], coords[1]);
+            // PLACE DRAW FUNC HERE
+            if(solveBacktracking(board)) return true;
+            board.place(0, coords[0], coords[1]);
+        }
+    }
+    return false;
+}
+
+// Solves the board using Cross-Hatching
+bool solveCrossHatch(SudokuBoard& board) {
+    vector<pair<int, int>> mutables = board.findMutables();
+    vector<tuple<int, int, vector<int>>> options;
+    for(pair<int, int> c : mutables) {
+        if(board.getValAtCoords(c.first, c.second) != 0) continue;
+        vector<int> cellOptions;
+        for(unsigned int i = 1; i <= 9; i++) {
+            if(board.isSafe(i, c.first, c.second)) cellOptions.push_back(i);
+        }
+        options.push_back(make_tuple(c.first, c.second, cellOptions));
+    }
+    if(options.size() == 0) return true;
+    options = mergeSort(options);
+    for(int i : get<2>(options[0])) {
+        board.place(i, get<0>(options[0]), get<1>(options[0]));
+        // PLACE DRAW FUNC HERE
+        if(solveCrossHatch(board)) return true;
+        board.place(0, get<0>(options[0]), get<1>(options[0]));
+    }
+    return false;
+}
 
 void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<char>>& board, int currentRow, int currentCol) {
     sf::Font font;
@@ -102,70 +193,38 @@ void drawSudokuBoard(sf::RenderWindow& window, const std::vector<std::vector<cha
 }
 //clone of other board function to test multiple boards
 
-// Check if it's safe to place the digit at board[row][col]
-bool isSafe(vector<vector<char>>& board, int row, int col, char digit) {
-    for (int i = 0; i < 9; ++i) {
-        if (board[row][i] == digit || board[i][col] == digit) {
-            return false;
-        }
-    }
+// // Solve the Sudoku using backtracking
+// bool solveSudoku(sf::RenderWindow& window, vector<vector<char>>& board, int row, int col) {
+//     if (row == 9) {
+//         return true;
+//     }
 
-    int subgridStartRow = 3 * (row / 3);
-    int subgridStartCol = 3 * (col / 3);
+//     if (col == 9) {
+//         return solveSudoku(window, board, row + 1, 0);
+//     }
 
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            if (board[subgridStartRow + i][subgridStartCol + j] == digit) {
-                return false;
-            }
-        }
-    }
+//     if (board[row][col] == '0' || board[row][col] == ' ') {
 
-    return true;
-}
+//         for (char digit = '1'; digit <= '9'; ++digit) {
+//             if (isSafe(board, row, col, digit)) {
+//                 board[row][col] = digit;
+//                 drawSudokuBoard(window, board, row, col);
+//                 window.display();
+//                 sf::sleep(sf::milliseconds(100));
 
-// Solve the Sudoku using backtracking
-bool solveSudoku(sf::RenderWindow& window, vector<vector<char>>& board, int row, int col) {
-    if (row == 9) {
-        return true;
-    }
-
-    if (col == 9) {
-        return solveSudoku(window, board, row + 1, 0);
-    }
-
-    if (board[row][col] == '0' || board[row][col] == ' ') {
-
-        for (char digit = '1'; digit <= '9'; ++digit) {
-            if (isSafe(board, row, col, digit)) {
-                board[row][col] = digit;
-                drawSudokuBoard(window, board, row, col);
-                window.display();
-                sf::sleep(sf::milliseconds(100));
-
-                if (solveSudoku(window, board, row, col + 1)) {
-                    return true;
-                }
-                board[row][col] = '0';
-            }
-        }
-        return false;
-    } else {
-        return solveSudoku(window, board, row, col + 1);
-    }
-}
-
-void printBoard(const vector<vector<char>>& board) {
-    for (const auto& row : board) {
-        for (char cell : row) {
-            cout << cell << " ";
-        }
-        cout << endl;
-    }
-}
+//                 if (solveSudoku(window, board, row, col + 1)) {
+//                     return true;
+//                 }
+//                 board[row][col] = '0';
+//             }
+//         }
+//         return false;
+//     } else {
+//         return solveSudoku(window, board, row, col + 1);
+//     }
+// }
 
 int main() {
-
     SudokuBoards sudokuBoards; // create an instance of SudokuBoards to store multiple boards
 
     ifstream inputFile("../sudokuNew.csv");
@@ -287,8 +346,7 @@ int main() {
             }
         }
     }
-
-
-
     return 0;
 }
+*/
+

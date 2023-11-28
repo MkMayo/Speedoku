@@ -1,12 +1,15 @@
-cmake_minimum_required(VERSION 3.14)
-project(HelloSFML)
+cmake_minimum_required(VERSION 3.16)
+project(Speedoku LANGUAGES CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-set(SOURCE_FILES main.cpp)
-add_executable(HelloSFML ${SOURCE_FILES})
-include_directories(/usr/local/include)
+include(FetchContent)
+FetchContent_Declare(SFML
+  GIT_REPOSITORY https://github.com/SFML/SFML.git
+  GIT_TAG 2.6.x)
+FetchContent_MakeAvailable(SFML)
 
-find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
-include_directories(${SFML_INCLUDE_DIRS})
-target_link_libraries(HelloSFML sfml-system sfml-window sfml-graphics sfml-audio sfml-network)
+add_executable(Speedoku src/main.cpp src/SudokuBoard.cpp src/SudokuCell.cpp)
+target_link_libraries(Speedoku PRIVATE sfml-system sfml-window sfml-graphics sfml-audio)
+target_compile_features(Speedoku PRIVATE cxx_std_14)
