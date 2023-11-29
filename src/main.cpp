@@ -12,13 +12,13 @@ using namespace std;
 void loadTexture(const string& textureName, map<string, sf::Texture>& textures) {
     sf::Texture texture;
     textures.emplace(textureName, texture);
-    textures[textureName].loadFromFile("assets/" + textureName + ".png");
+    textures[textureName].loadFromFile("../../assets/" + textureName + ".png");
 }
 
 // Function to initialize all textures
 map<string, sf::Texture> initializeTextures() {
     map<string, sf::Texture> textures;
-    
+
     loadTexture("sudoku_icon", textures);
     loadTexture("speedoku_text", textures);
     loadTexture("start_icon", textures);
@@ -29,8 +29,8 @@ map<string, sf::Texture> initializeTextures() {
 // Function to initialize all Sudoku boards in the dataset
 vector<SudokuBoard> initializeBoards() {
     vector<SudokuBoard> boards;
-    
-    ifstream inputFile("assets/dataset.csv");
+
+    ifstream inputFile("../../assets/dataset.csv");
 
     if(!inputFile.is_open()) {
         cerr << "Error opening the file." << endl;
@@ -109,7 +109,7 @@ vector<tuple<int, int, vector<int>>> mergeSort(vector<tuple<int, int, vector<int
 void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     sf::Font font;
 
-    if (!font.loadFromFile("assets/arial.ttf")) {
+    if (!font.loadFromFile("../../assets/arial.ttf")) {
         std::cerr << "Error loading font." << std::endl;
         return;
     }
@@ -119,13 +119,19 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     text.setCharacterSize(36); //font size
     text.setFillColor(sf::Color::Black);
 
+    sf::Text algoText;
+    algoText.setFont(font);
+    algoText.setCharacterSize(36); // Adjust the font size as needed
+    algoText.setFillColor(sf::Color::Black);
+    algoText.setString(algo == 0 ? "Backtracking" : "Cross-Hatching"); // Initialize with a default value
+
     float cellSize = 48.0f;
     float borderSize = 8.0f;
 
     sf::RectangleShape background(sf::Vector2f((10 * borderSize) + (9 * cellSize), (10 * borderSize) + (9 * cellSize)));
     background.setOrigin(sf::Vector2f(((10 * borderSize) + (9 * cellSize)) / 2, ((10 * borderSize) + (9 * cellSize)) / 2));
     background.setFillColor(sf::Color::Black);
-    background.setPosition(640, 320);
+    background.setPosition(640, 420);
 
     sf::RectangleShape cell(sf::Vector2f(cellSize, cellSize));
     cell.setOrigin(sf::Vector2f(cellSize / 2, cellSize / 2));
@@ -134,9 +140,15 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     window.clear(sf::Color::White);
     window.draw(background);
     float initPosX = 640 - ((cellSize + borderSize) * 4);
-    float initPosY = 320 - ((cellSize + borderSize) * 4);
+    float initPosY = 420 - ((cellSize + borderSize) * 4);
     float posX = initPosX;
     float posY = initPosY;
+
+    sf::FloatRect textBounds = algoText.getLocalBounds();
+    algoText.setPosition(640 - textBounds.width / 2, 100); // Adjust the position based on your layout
+    window.draw(algoText);
+
+
     for(unsigned int i = 0; i < 9; i++) {
         for(unsigned int j = 0; j < 9; j++) {
             cell.setPosition(posX, posY);
@@ -199,38 +211,8 @@ bool solveCrossHatch(SudokuBoard& board, sf::RenderWindow& window) {
     return false;
 }
 
-// // Solve the Sudoku using backtracking
-// bool solveSudoku(sf::RenderWindow& window, vector<vector<char>>& board, int row, int col) {
-//     if (row == 9) {
-//         return true;
-//     }
-
-//     if (col == 9) {
-//         return solveSudoku(window, board, row + 1, 0);
-//     }
-
-//     if (board[row][col] == '0' || board[row][col] == ' ') {
-
-//         for (char digit = '1'; digit <= '9'; ++digit) {
-//             if (isSafe(board, row, col, digit)) {
-//                 board[row][col] = digit;
-//                 drawSudokuBoard(window, board, row, col);
-//                 window.display();
-//                 sf::sleep(sf::milliseconds(100));
-
-//                 if (solveSudoku(window, board, row, col + 1)) {
-//                     return true;
-//                 }
-//                 board[row][col] = '0';
-//             }
-//         }
-//         return false;
-//     } else {
-//         return solveSudoku(window, board, row, col + 1);
-//     }
-// }
-
 int main() {
+//    srand(static_cast<unsigned>(time(0))); // Seed the random number generator
     vector<SudokuBoard> boards = initializeBoards();
     map<string, sf::Texture> textures = initializeTextures();
 
@@ -240,8 +222,8 @@ int main() {
     sf::Sprite sudoku_icon;
     sudoku_icon.setTexture(textures["sudoku_icon"]);
     sudoku_icon.setOrigin(sf::Vector2f(textures["sudoku_icon"].getSize().x / 2, textures["sudoku_icon"].getSize().y / 2));
-    sudoku_icon.setScale(1.0f, 1.0f);
-    sudoku_icon.setPosition(640, 200);
+    sudoku_icon.setScale(0.75f, 0.75f);
+    sudoku_icon.setPosition(640, 350);
 
     sf::Sprite speedoku_text;
     speedoku_text.setTexture(textures["speedoku_text"]);
@@ -253,7 +235,7 @@ int main() {
     start_icon.setTexture(textures["start_icon"]);
     start_icon.setOrigin(sf::Vector2f(textures["start_icon"].getSize().x / 2, textures["start_icon"].getSize().y / 2));
     start_icon.setScale(0.65f, 0.65f);
-    start_icon.setPosition(640, 480);
+    start_icon.setPosition(640, 630);
 
     int mode = 0;
     int board = 0;
@@ -290,7 +272,7 @@ int main() {
             SudokuBoard boardAlgo1 = boards[board];
             solveBacktracking(boardAlgo1, welcome_window);
             sf::sleep(sf::milliseconds(2500));
-            drawSudokuBoard(boards[board], welcome_window, 0);
+            drawSudokuBoard(boards[board], welcome_window, 1);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo2 = boards[board];
             solveCrossHatch(boardAlgo2, welcome_window);
@@ -299,7 +281,6 @@ int main() {
             // TODO: Implement post-solve time comparison screen.
         }
     }
-    
+
     return 0;
 }
-
