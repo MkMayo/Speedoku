@@ -5,7 +5,9 @@
 #include <string>
 #include <map>
 #include <tuple>
+#include <chrono>
 #include "SudokuBoard.h"
+#include "AlgorithmManager.h"
 using namespace std;
 
 // Function to load a single texture
@@ -15,13 +17,14 @@ void loadTexture(const string& textureName, map<string, sf::Texture>& textures) 
     textures[textureName].loadFromFile("../../assets/" + textureName + ".png");
 }
 
-// Function to initialize all textures
+// Function to initialize all texturesd
 map<string, sf::Texture> initializeTextures() {
     map<string, sf::Texture> textures;
 
     loadTexture("sudoku_icon", textures);
     loadTexture("speedoku_text", textures);
     loadTexture("start_icon", textures);
+    loadTexture("comparisons", textures);
 
     return textures;
 }
@@ -119,6 +122,12 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     text.setCharacterSize(36); //font size
     text.setFillColor(sf::Color::Black);
 
+    sf::Text enterText;
+    enterText.setFont(font);
+    enterText.setCharacterSize(48);
+    enterText.setFillColor(sf::Color::Black);
+    enterText.setString("Press enter to see algorithm stats");
+
     sf::Text algoText;
     algoText.setFont(font);
     algoText.setCharacterSize(36); // Adjust the font size as needed
@@ -146,7 +155,10 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
 
     sf::FloatRect textBounds = algoText.getLocalBounds();
     algoText.setPosition(640 - textBounds.width / 2, 100); // Adjust the position based on your layout
+    enterText.setPosition(5, 5);
+
     window.draw(algoText);
+    window.draw(enterText);
 
 
     for(unsigned int i = 0; i < 9; i++) {
@@ -174,6 +186,7 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
 // Solves the board using Backtracking
 bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window) {
     vector<int> coords = board.findNext();
+
     if(coords.empty()) return true;
     for(unsigned int i = 1; i <= 9; i++) {
         if(board.isSafe(i, coords[0], coords[1])) {
@@ -215,9 +228,12 @@ int main() {
 //    srand(static_cast<unsigned>(time(0))); // Seed the random number generator
     vector<SudokuBoard> boards = initializeBoards();
     map<string, sf::Texture> textures = initializeTextures();
-
+    AlgorithmManager Manager;
     sf::RenderWindow welcome_window(sf::VideoMode(1280, 720), "Speedoku");
     welcome_window.clear(sf::Color::White);
+
+    sf::Font font;
+    font.loadFromFile("../../assets/arial.ttf");
 
     sf::Sprite sudoku_icon;
     sudoku_icon.setTexture(textures["sudoku_icon"]);
@@ -236,6 +252,12 @@ int main() {
     start_icon.setOrigin(sf::Vector2f(textures["start_icon"].getSize().x / 2, textures["start_icon"].getSize().y / 2));
     start_icon.setScale(0.65f, 0.65f);
     start_icon.setPosition(640, 630);
+
+    sf::Text enter_text;
+    enter_text.setFont(font);
+    enter_text.setPosition(50, 50);
+    enter_text.setCharacterSize(50);
+    enter_text.setString("Press Enter to Display Stats");
 
     int mode = 0;
     int board = 0;
@@ -256,6 +278,11 @@ int main() {
                         }
                     }
                 }
+                if(mode == 1){
+                    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter){
+                        mode = 2;
+                    }
+                }
             }
         }
 
@@ -270,15 +297,58 @@ int main() {
             drawSudokuBoard(boards[board], welcome_window, 0);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo1 = boards[board];
+
+            auto start = chrono::high_resolution_clock::now();
             solveBacktracking(boardAlgo1, welcome_window);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = (end - start);
+
+            //update manager with Backtracking run
+            Manager.updateAlgo("backtracking", elapsed.count());
             sf::sleep(sf::milliseconds(2500));
             drawSudokuBoard(boards[board], welcome_window, 1);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo2 = boards[board];
+
+            start = chrono::high_resolution_clock::now();
             solveCrossHatch(boardAlgo2, welcome_window);
-            welcome_window.close();
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = (end - start);
+            Manager.updateAlgo("crosshatching", elapsed.count());
+            sf::sleep(sf::seconds(2));
+
         } else if(mode == 2) {
             // TODO: Implement post-solve time comparison screen.
+            // TODO: Implement post-solve time comparison screen.
+            welcome_window.clear(sf::Color::Black);
+            //backtracking text object
+            sf::Text bt_text;
+            bt_text.setFont(font);
+            bt_text.setCharacterSize(36); //font size
+            bt_text.setFillColor(sf::Color::Green);
+            string bt_average = to_string(Manager.getAverage("backtracking"));
+            bt_average = bt_average.substr(0, 4);
+            bt_text.setString("Backtracking average time: " + bt_average);
+            bt_text.setPosition(200, 300);
+            //crosshatching text object
+            sf::Text ch_text;
+            ch_text.setFont(font);
+            ch_text.setCharacterSize(36); //font size
+            ch_text.setFillColor(sf::Color::Green);
+            string ch_average = to_string(Manager.getAverage("crosshatching"));
+            ch_average = ch_average.substr(0, 4);
+            ch_text.setString("Crosshatching average time: " + ch_average);
+            ch_text.setPosition(200, 350);
+
+            sf::Sprite comparisons;
+            comparisons.setTexture(textures["comparisons"]);
+            comparisons.setOrigin(sf::Vector2f(textures["comparisons"].getSize().x / 2, textures["comparisons"].getSize().y / 2));
+            comparisons.setScale(1.0f, 1.0f);
+            comparisons.setPosition(640, 120);
+            welcome_window.draw(comparisons);
+            welcome_window.draw(bt_text);
+            welcome_window.draw(ch_text);
+            welcome_window.display();
         }
     }
 
