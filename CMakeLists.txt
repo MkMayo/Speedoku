@@ -10,6 +10,7 @@ FetchContent_Declare(SFML
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(Speedoku src/main.cpp src/SudokuBoard.cpp src/SudokuCell.cpp)
+add_executable(Speedoku src/main.cpp src/SudokuBoard.cpp src/SudokuCell.cpp
+        src/AlgorithmManager.cpp)
 target_link_libraries(Speedoku PRIVATE sfml-system sfml-window sfml-graphics sfml-audio)
 target_compile_features(Speedoku PRIVATE cxx_std_14)

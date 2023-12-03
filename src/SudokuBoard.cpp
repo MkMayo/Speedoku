@@ -124,3 +124,25 @@ int SudokuBoard::getValAtCoords(int row, int col) {
 bool SudokuBoard::place(int num, int row, int col) {
   return this->board[findIndexFromCoords(row, col)].setValue(num);
 }
+
+bool SudokuBoard::isSolved()  {
+    for ( SudokuCell& cell : board) {
+        if (cell.getValue() == 0 || !cell.getMutableCell()) {
+            return false;  // If any cell is empty or not mutable, the board is not solved
+        }
+    }
+    return true;  // All cells are filled, and all cells are mutable
+}
+vector<int> SudokuBoard::getCandidates(int row, int col)  {
+    vector<int> candidates;
+    if (board[getValAtCoords(row, col)].getMutableCell()) {
+        for (int num = 1; num <= 9; ++num) {
+            if (isSafe(num, row, col)) {
+                candidates.push_back(num);
+            }
+        }
+    }
+    return candidates;
+}
+
+

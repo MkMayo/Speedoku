@@ -1,4 +1,5 @@
 #include "SudokuCell.h"
+#include "iostream"
 
 SudokuCell::SudokuCell(int value) {
   this->value = value;
@@ -24,3 +25,4 @@ bool SudokuCell::setValue(int value) {
 bool SudokuCell::getMutableCell() {
   return this->mutableCell;
 }
+

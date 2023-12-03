@@ -8,6 +8,7 @@
 #include <chrono>
 #include "SudokuBoard.h"
 #include "AlgorithmManager.h"
+
 using namespace std;
 
 // Function to load a single texture
@@ -24,6 +25,8 @@ map<string, sf::Texture> initializeTextures() {
     loadTexture("sudoku_icon", textures);
     loadTexture("speedoku_text", textures);
     loadTexture("start_icon", textures);
+    loadTexture("comparisonsOLD", textures);
+    loadTexture("Speedoku", textures);
     loadTexture("comparisons", textures);
 
     return textures;
@@ -132,7 +135,18 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     algoText.setFont(font);
     algoText.setCharacterSize(36); // Adjust the font size as needed
     algoText.setFillColor(sf::Color::Black);
-    algoText.setString(algo == 0 ? "Backtracking" : "Cross-Hatching"); // Initialize with a default value
+
+    if (algo == 0){
+        algoText.setString("Backtracking");
+    }
+    else if (algo == 1){
+        algoText.setString("Cross-Hatching");
+    }
+    else if (algo == 2){
+            algoText.setString("Naked Singles");
+    }
+
+
 
     float cellSize = 48.0f;
     float borderSize = 8.0f;
@@ -224,8 +238,39 @@ bool solveCrossHatch(SudokuBoard& board, sf::RenderWindow& window) {
     return false;
 }
 
+bool findNakedSingle(SudokuBoard& board,sf::RenderWindow& window) {
+    bool foundSingle = false;
+
+    for (int row = 0; row < 9; ++row) {
+        for (int col = 0; col < 9; ++col) {
+            if (board.getValAtCoords(row, col) == 0) {
+                // If only one candidate is possible, fill the cell
+                vector<int> candidates = board.getCandidates(row, col);
+                if (candidates.size() == 1) {
+                    board.place(candidates[0], row, col);
+                    drawSudokuBoard(board, window, 2);
+                    foundSingle = true;
+                }
+            }
+        }
+    }
+
+    return foundSingle;
+}
+
+bool solveNakedSingle(SudokuBoard& board, sf::RenderWindow& window) {
+    while (true) {
+        if (!findNakedSingle(board, window)) {
+            solveCrossHatch(board, window);
+            break;
+        }
+    }
+    return board.isSolved();
+}
+
+
 int main() {
-//    srand(static_cast<unsigned>(time(0))); // Seed the random number generator
+    srand(static_cast<unsigned>(time(0))); // Seed the random number generator
     vector<SudokuBoard> boards = initializeBoards();
     map<string, sf::Texture> textures = initializeTextures();
     AlgorithmManager Manager;
@@ -242,10 +287,10 @@ int main() {
     sudoku_icon.setPosition(640, 350);
 
     sf::Sprite speedoku_text;
-    speedoku_text.setTexture(textures["speedoku_text"]);
-    speedoku_text.setOrigin(sf::Vector2f(textures["speedoku_text"].getSize().x / 2, textures["speedoku_text"].getSize().y / 2));
-    speedoku_text.setScale(1.0f, 1.0f);
-    speedoku_text.setPosition(640, 120);
+    speedoku_text.setTexture(textures["Speedoku"]);
+    speedoku_text.setOrigin(sf::Vector2f(textures["Speedoku"].getSize().x / 2, textures["Speedoku"].getSize().y / 2));
+    speedoku_text.setScale(0.5f, 0.5f);
+    speedoku_text.setPosition(640, 80);
 
     sf::Sprite start_icon;
     start_icon.setTexture(textures["start_icon"]);
@@ -297,19 +342,17 @@ int main() {
             drawSudokuBoard(boards[board], welcome_window, 0);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo1 = boards[board];
-
             auto start = chrono::high_resolution_clock::now();
             solveBacktracking(boardAlgo1, welcome_window);
             auto end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = (end - start);
-
             //update manager with Backtracking run
             Manager.updateAlgo("backtracking", elapsed.count());
             sf::sleep(sf::milliseconds(2500));
+
             drawSudokuBoard(boards[board], welcome_window, 1);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo2 = boards[board];
-
             start = chrono::high_resolution_clock::now();
             solveCrossHatch(boardAlgo2, welcome_window);
             end = std::chrono::high_resolution_clock::now();
@@ -317,40 +360,81 @@ int main() {
             Manager.updateAlgo("crosshatching", elapsed.count());
             sf::sleep(sf::seconds(2));
 
+
+            drawSudokuBoard(boards[board], welcome_window, 2);
+            sf::sleep(sf::milliseconds(2500));
+            SudokuBoard boardAlgo3 = boards[board];
+            start = chrono::high_resolution_clock::now();
+            solveNakedSingle(boardAlgo3, welcome_window);
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = (end - start);
+            Manager.updateAlgo("NakedSingle", elapsed.count());
+            sf::sleep(sf::milliseconds(2500));
+
+            board++;
+
+
         } else if(mode == 2) {
             // TODO: Implement post-solve time comparison screen.
             // TODO: Implement post-solve time comparison screen.
-            welcome_window.clear(sf::Color::Black);
+            welcome_window.clear(sf::Color::White);
+            float screenWidth = welcome_window.getSize().x;
+
+
             //backtracking text object
             sf::Text bt_text;
             bt_text.setFont(font);
             bt_text.setCharacterSize(36); //font size
-            bt_text.setFillColor(sf::Color::Green);
+            bt_text.setFillColor(sf::Color::Black);
             string bt_average = to_string(Manager.getAverage("backtracking"));
             bt_average = bt_average.substr(0, 4);
-            bt_text.setString("Backtracking average time: " + bt_average);
-            bt_text.setPosition(200, 300);
+            bt_text.setString("Backtracking average time: " + bt_average+ " seconds");
+            sf::FloatRect textBounds = bt_text.getLocalBounds();
+            float textWidth = textBounds.width;
+            bt_text.setPosition((screenWidth - textWidth) / 2, 300);
+
+
+
             //crosshatching text object
             sf::Text ch_text;
             ch_text.setFont(font);
             ch_text.setCharacterSize(36); //font size
-            ch_text.setFillColor(sf::Color::Green);
+            ch_text.setFillColor(sf::Color::Black);
             string ch_average = to_string(Manager.getAverage("crosshatching"));
             ch_average = ch_average.substr(0, 4);
-            ch_text.setString("Crosshatching average time: " + ch_average);
-            ch_text.setPosition(200, 350);
+            ch_text.setString("Crosshatching average time: " + ch_average+ " seconds" );
+            sf::FloatRect textBounds2 = ch_text.getLocalBounds();
+            float textWidth2 = textBounds2.width;
+            ch_text.setPosition((screenWidth - textWidth2) / 2, 350);
+
+            sf::Text nt_text;
+            nt_text.setFont(font);
+            nt_text.setCharacterSize(36); //font size
+            nt_text.setFillColor(sf::Color::Black);
+            string nt_average = to_string(Manager.getAverage("NakedSingle"));
+            nt_average = nt_average.substr(0, 4);
+            nt_text.setString("Naked Single average time: " + nt_average + " seconds");
+            sf::FloatRect textBounds3 = nt_text.getLocalBounds();
+            float textWidth3 = textBounds3.width;
+            nt_text.setPosition((screenWidth - textWidth3) / 2, 400);
 
             sf::Sprite comparisons;
             comparisons.setTexture(textures["comparisons"]);
-            comparisons.setOrigin(sf::Vector2f(textures["comparisons"].getSize().x / 2, textures["comparisons"].getSize().y / 2));
-            comparisons.setScale(1.0f, 1.0f);
-            comparisons.setPosition(640, 120);
+            comparisons.setScale(0.5, 0.5f);
+            sf::FloatRect textBounds4 = comparisons.getLocalBounds();
+            float textWidth4 = textBounds4.width;
+            comparisons.setPosition((screenWidth - textWidth4) + 350, 120);
+
             welcome_window.draw(comparisons);
             welcome_window.draw(bt_text);
             welcome_window.draw(ch_text);
+            welcome_window.draw(nt_text);
+
             welcome_window.display();
         }
     }
 
     return 0;
+
+
 }

@@ -11,6 +11,7 @@ AlgorithmManager::AlgorithmManager() {
     default_pair.second = 0.0;
     this->algos.emplace("backtracking", default_pair);
     this->algos.emplace("crosshatching", default_pair);
+    this->algos.emplace("NakedSingle", default_pair);
 }
 
 void AlgorithmManager::updateAlgo(string algorithm, float runtime){
