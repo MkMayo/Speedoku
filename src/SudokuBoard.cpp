@@ -131,7 +131,7 @@ bool SudokuBoard::isSolved()  {
             return false;  // If any cell is empty or not mutable, the board is not solved
         }
     }
-    return true;  // All cells are filled, and all cells are mutable
+    return true;  // All cells are filled, and all cells are mutabl
 }
 vector<int> SudokuBoard::getCandidates(int row, int col)  {
     vector<int> candidates;

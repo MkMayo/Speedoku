@@ -9,7 +9,7 @@
 #include "SudokuBoard.h"
 #include "AlgorithmManager.h"
 
-using namespace std;
+using namespace std ;
 
 // Function to load a single texture
 void loadTexture(const string& textureName, map<string, sf::Texture>& textures) {

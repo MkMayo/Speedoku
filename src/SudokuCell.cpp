@@ -2,7 +2,7 @@
 #include "iostream"
 
 SudokuCell::SudokuCell(int value) {
-  this->value = value;
+  this->value = value ;
   this->mutableCell = false;
   if(value == 0) {
     this->mutableCell = true;

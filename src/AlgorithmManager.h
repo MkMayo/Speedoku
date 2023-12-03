@@ -11,7 +11,7 @@ public:
     AlgorithmManager();
     int getRunCount(string algorithm);
     float getAverage(string algorithm);
-    void updateAlgo(string algorithm, float runtime);
+    void updateAlgo(string algorithm, float runtime) ;
 private:
     int total_run;
     map<string, pair<int, float>> algos;

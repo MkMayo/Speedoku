@@ -10,7 +10,7 @@ AlgorithmManager::AlgorithmManager() {
     default_pair.first = 0;
     default_pair.second = 0.0;
     this->algos.emplace("backtracking", default_pair);
-    this->algos.emplace("crosshatching", default_pair);
+    this->algos.emplace("crosshatching", default_pair) ;
     this->algos.emplace("NakedSingle", default_pair);
 }
 

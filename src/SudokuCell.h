@@ -2,7 +2,7 @@
 
 class SudokuCell {
 private:
-    int value;
+    int value ;
     bool mutableCell;
     std::vector<int> candidates;  // New member to store candidates
 
@@ -11,6 +11,7 @@ public:
     int getValue();
     bool setValue(int value);
     bool getMutableCell();
+
 };
 
 
