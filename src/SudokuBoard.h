@@ -11,6 +11,7 @@ class SudokuBoard {
 
   public:
     SudokuBoard(string rawBoardStr);
+    int getValAtIndex(int index);
     void debugPrintBoard();
     bool isSafeRow(int num, int row);
     bool isSafeCol(int num, int col);

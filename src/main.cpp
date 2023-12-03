@@ -8,6 +8,7 @@
 #include <chrono>
 #include "SudokuBoard.h"
 #include "AlgorithmManager.h"
+#include <unordered_map>
 
 using namespace std ;
 
@@ -143,9 +144,11 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
         algoText.setString("Cross-Hatching");
     }
     else if (algo == 2){
-            algoText.setString("Naked Singles");
+        algoText.setString("Naked Singles");
     }
-
+    else if (algo == 3){
+        algoText.setString("Hidden Singles with Backtracking");
+    }
 
 
     float cellSize = 48.0f;
@@ -198,7 +201,7 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
 //clone of other board function to test multiple boards
 
 // Solves the board using Backtracking
-bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window) {
+bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window, bool singles) {
     vector<int> coords = board.findNext();
 
     if(coords.empty()) return true;
@@ -206,8 +209,11 @@ bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window) {
         if(board.isSafe(i, coords[0], coords[1])) {
             board.place(i, coords[0], coords[1]);
             // PLACE DRAW FUNC HERE
-            drawSudokuBoard(board, window, 0);
-            if(solveBacktracking(board, window)) return true;
+            if(!singles){drawSudokuBoard(board, window, 0);}
+            else{
+                drawSudokuBoard(board, window, 3);
+            }
+            if(solveBacktracking(board, window, singles)) return true;
             board.place(0, coords[0], coords[1]);
         }
     }
@@ -267,6 +273,80 @@ bool solveNakedSingle(SudokuBoard& board, sf::RenderWindow& window) {
     }
     return board.isSolved();
 }
+
+bool solveHiddenSingles(SudokuBoard& board){
+    //each cell by default has values that could go there
+    //if a cell in a box has an option that no other cell in the box has, then that option must go there
+    //look at each box
+
+    for (int r = 0; r < 9; r += 3) { // iterate through each box (row)
+        for (int c = 0; c < 9; c += 3) { // iterate through each box (column)
+            std::vector<int> box_index; // vector to store indices of each cell in the current box
+
+            for (int i = r; i < r + 3; ++i) { // iterate through each cell in the box (row)
+                for (int j = c; j < c + 3; ++j) { // iterate through each cell in the box (column)
+                    int index = i * 9 + j;
+                    box_index.push_back(index);
+                }
+            }
+            std::vector<int> arrayOfVectors[9];
+            int count = 0;
+            for(int cell_index : box_index) {
+                vector<int> temp_possibles;
+                if(board.getValAtIndex(cell_index) == 0){ //if mutable
+                    //push into array of vectors a vector containing the values each cell could be
+                    for(int i = 1; i < 10; ++i){
+                        int row_temp = cell_index / 9;
+                        int col_temp = cell_index % 9;
+                        if(board.isSafe(i, row_temp, col_temp)){ //if digit could go in the cell given by the index
+                            temp_possibles.push_back(i);
+                        }
+                    }
+                    arrayOfVectors[count] = temp_possibles;
+                }
+                count += 1;
+            }
+            vector<int> found_singles;
+            unordered_map<int, int> number_possibles;
+
+            //initalize maps with possible digits and the number of cells with that possible digit
+            for(int z = 1; z < 10; z++) {
+                auto temp_pair = make_pair(z, 0);
+                number_possibles.insert(temp_pair);
+            }
+
+            for(int i = 0; i < 9; ++i){ //for each value in the box
+                if(!arrayOfVectors[i].empty()){ //if mutable
+                    for(int x = 0; x < arrayOfVectors[i].size(); ++x){ //for each possible value in the cell dictated by i
+                        number_possibles[arrayOfVectors[i].at(x)] += 1; //update that values count in the map
+                    }
+                }
+            }
+
+            //go through the map, if any value has a 1 associated that value is a hidden single in the box
+            for(int i = 1; i < 10; ++i){
+                if(number_possibles[i] == 1){
+                    found_singles.push_back(i);
+                }
+            }
+
+            //we now have a vector containing the hidden singles for this box
+            for(int cell_index : box_index){
+                for(int i : found_singles){
+                    int row_temp = cell_index / 9;
+                    int col_temp = cell_index % 9;
+                    if(board.isSafe(i, row_temp, col_temp)){ //if digit could go in the cell given by the index
+                        //at this point i is the single and row_temp and col_temp represent the coords of where it should go
+                        board.place(i, row_temp, col_temp);
+                    }
+                }
+            }
+
+        }
+
+    }
+}
+
 
 
 int main() {
@@ -343,7 +423,7 @@ int main() {
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo1 = boards[board];
             auto start = chrono::high_resolution_clock::now();
-            solveBacktracking(boardAlgo1, welcome_window);
+            solveBacktracking(boardAlgo1, welcome_window, false);
             auto end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = (end - start);
             //update manager with Backtracking run
@@ -370,6 +450,21 @@ int main() {
             elapsed = (end - start);
             Manager.updateAlgo("NakedSingle", elapsed.count());
             sf::sleep(sf::milliseconds(2500));
+
+
+
+            drawSudokuBoard(boards[board], welcome_window, 3);
+            sf::sleep(sf::milliseconds(2500));
+            SudokuBoard boardAlgo4 = boards[board];
+            start = chrono::high_resolution_clock::now();
+            solveHiddenSingles(boardAlgo4);
+            drawSudokuBoard(boards[board], welcome_window, 3);
+            solveBacktracking(boardAlgo4, welcome_window, true);
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = (end - start);
+            Manager.updateAlgo("HiddenSingle", elapsed.count());
+            sf::sleep(sf::milliseconds(2500));
+
 
             board++;
 
@@ -418,6 +513,17 @@ int main() {
             float textWidth3 = textBounds3.width;
             nt_text.setPosition((screenWidth - textWidth3) / 2, 400);
 
+            sf::Text hs_text;
+            hs_text.setFont(font);
+            hs_text.setCharacterSize(36); //font size
+            hs_text.setFillColor(sf::Color::Black);
+            string hs_average = to_string(Manager.getAverage("HiddenSingle"));
+            hs_average = hs_average.substr(0, 4);
+            hs_text.setString("Hidden Single average time: " + hs_average + " seconds");
+            sf::FloatRect textBounds5 = hs_text.getLocalBounds();
+            float textWidth5 = textBounds5.width;
+            hs_text.setPosition((screenWidth - textWidth5) / 2, 450);
+
             sf::Sprite comparisons;
             comparisons.setTexture(textures["comparisons"]);
             comparisons.setScale(0.5, 0.5f);
@@ -429,7 +535,7 @@ int main() {
             welcome_window.draw(bt_text);
             welcome_window.draw(ch_text);
             welcome_window.draw(nt_text);
-
+            welcome_window.draw(hs_text);
             welcome_window.display();
         }
     }

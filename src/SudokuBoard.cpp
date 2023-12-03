@@ -10,6 +10,11 @@ int findIndexFromCoords(int row, int col) {
   return (row * 9) + col;
 }
 
+int SudokuBoard::getValAtIndex(int index){
+    return this->board[index].getValue();
+}
+
+
 // Initializes a board given a string of digits
 SudokuBoard::SudokuBoard(string rawBoardStr) {
   vector<SudokuCell> board;
