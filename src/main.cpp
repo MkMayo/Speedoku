@@ -130,7 +130,7 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     enterText.setFont(font);
     enterText.setCharacterSize(48);
     enterText.setFillColor(sf::Color::Black);
-    enterText.setString("Press enter to see algorithm stats");
+    enterText.setString("Press Enter To See Algorithm Stats!");
 
     sf::Text algoText;
     algoText.setFont(font);
@@ -172,7 +172,9 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
 
     sf::FloatRect textBounds = algoText.getLocalBounds();
     algoText.setPosition(640 - textBounds.width / 2, 100); // Adjust the position based on your layout
-    enterText.setPosition(5, 5);
+
+    sf::FloatRect textBounds1 = enterText.getLocalBounds();
+    enterText.setPosition(640 - textBounds1.width/2, 10); // Adjust the position based on your layout
 
     window.draw(algoText);
     window.draw(enterText);
@@ -250,7 +252,6 @@ bool findNakedSingle(SudokuBoard& board,sf::RenderWindow& window) {
     for (int row = 0; row < 9; ++row) {
         for (int col = 0; col < 9; ++col) {
             if (board.getValAtCoords(row, col) == 0) {
-                // If only one candidate is possible, fill the cell
                 vector<int> candidates = board.getCandidates(row, col);
                 if (candidates.size() == 1) {
                     board.place(candidates[0], row, col);
@@ -378,11 +379,6 @@ int main() {
     start_icon.setScale(0.65f, 0.65f);
     start_icon.setPosition(640, 630);
 
-    sf::Text enter_text;
-    enter_text.setFont(font);
-    enter_text.setPosition(50, 50);
-    enter_text.setCharacterSize(50);
-    enter_text.setString("Press Enter to Display Stats");
 
     int mode = 0;
     int board = 0;
@@ -403,9 +399,16 @@ int main() {
                         }
                     }
                 }
-                if(mode == 1){
-                    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter){
+                if (mode == 1) {
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
                         mode = 2;
+                    }
+                }
+                else if (mode == 2){
+                    cout<<"im in";
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
+                        welcome_window.clear(sf::Color::White);
+                        mode = 1;
                     }
                 }
             }
@@ -440,7 +443,6 @@ int main() {
             Manager.updateAlgo("crosshatching", elapsed.count());
             sf::sleep(sf::seconds(2));
 
-
             drawSudokuBoard(boards[board], welcome_window, 2);
             sf::sleep(sf::milliseconds(2500));
             SudokuBoard boardAlgo3 = boards[board];
@@ -450,8 +452,6 @@ int main() {
             elapsed = (end - start);
             Manager.updateAlgo("NakedSingle", elapsed.count());
             sf::sleep(sf::milliseconds(2500));
-
-
 
             drawSudokuBoard(boards[board], welcome_window, 3);
             sf::sleep(sf::milliseconds(2500));
@@ -465,7 +465,6 @@ int main() {
             Manager.updateAlgo("HiddenSingle", elapsed.count());
             sf::sleep(sf::milliseconds(2500));
 
-
             board++;
 
 
@@ -474,6 +473,15 @@ int main() {
             // TODO: Implement post-solve time comparison screen.
             welcome_window.clear(sf::Color::White);
             float screenWidth = welcome_window.getSize().x;
+
+            sf::Text enter_Text;
+            enter_Text.setFont(font);
+            enter_Text.setCharacterSize(48);
+            enter_Text.setFillColor(sf::Color::Black);
+            enter_Text.setString("Press Enter To Go Back To Algorithms!");
+
+            sf::FloatRect textBounds6 = enter_Text.getLocalBounds();
+            enter_Text.setPosition(640 - textBounds6.width/2, 10); // Adjust the position based on your layout
 
 
             //backtracking text object
@@ -487,8 +495,6 @@ int main() {
             sf::FloatRect textBounds = bt_text.getLocalBounds();
             float textWidth = textBounds.width;
             bt_text.setPosition((screenWidth - textWidth) / 2, 300);
-
-
 
             //crosshatching text object
             sf::Text ch_text;
@@ -529,13 +535,14 @@ int main() {
             comparisons.setScale(0.5, 0.5f);
             sf::FloatRect textBounds4 = comparisons.getLocalBounds();
             float textWidth4 = textBounds4.width;
-            comparisons.setPosition((screenWidth - textWidth4) + 350, 120);
+            comparisons.setPosition((screenWidth - textWidth4) + 325, 120);
 
             welcome_window.draw(comparisons);
             welcome_window.draw(bt_text);
             welcome_window.draw(ch_text);
             welcome_window.draw(nt_text);
             welcome_window.draw(hs_text);
+            welcome_window.draw(enter_Text);
             welcome_window.display();
         }
     }

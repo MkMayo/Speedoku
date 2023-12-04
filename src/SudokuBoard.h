@@ -6,10 +6,10 @@
 using namespace std;
 
 class SudokuBoard {
-  private:
+private:
     vector<SudokuCell> board;
 
-  public:
+public:
     SudokuBoard(string rawBoardStr);
     int getValAtIndex(int index);
     void debugPrintBoard();
