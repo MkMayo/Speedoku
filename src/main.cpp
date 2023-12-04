@@ -200,6 +200,7 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     }
     window.display();
 }
+//clone of other board function to test multiple boards
 
 // Solves the board using Backtracking
 bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window, bool singles) {
@@ -209,6 +210,7 @@ bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window, bool single
     for(unsigned int i = 1; i <= 9; i++) {
         if(board.isSafe(i, coords[0], coords[1])) {
             board.place(i, coords[0], coords[1]);
+            // PLACE DRAW FUNC HERE
             if(!singles){drawSudokuBoard(board, window, 0);}
             else{
                 drawSudokuBoard(board, window, 3);
@@ -243,34 +245,44 @@ bool solveCrossHatch(SudokuBoard& board, sf::RenderWindow& window) {
     return false;
 }
 
-bool findNakedSingle(SudokuBoard& board,sf::RenderWindow& window) {
+// Function to find and fill naked singles in the Sudoku board
+bool findNakedSingle(SudokuBoard& board, sf::RenderWindow& window) {
     bool foundSingle = false;
-
+    // Iterate through each cell in the board
     for (int row = 0; row < 9; ++row) {
         for (int col = 0; col < 9; ++col) {
+            // Check if the cell is empty
             if (board.getValAtCoords(row, col) == 0) {
+                // Get the candidates for the empty cell
                 vector<int> candidates = board.getCandidates(row, col);
+                // If there's only one candidate, place it on the board
                 if (candidates.size() == 1) {
                     board.place(candidates[0], row, col);
+                    // Draw the updated board (assuming drawSudokuBoard is defined)
                     drawSudokuBoard(board, window, 2);
-                    foundSingle = true;
+                    foundSingle = true; // Mark that a single was found
                 }
             }
         }
     }
 
-    return foundSingle;
+    return foundSingle; // Return whether a single was found in this iteration
 }
 
+// Function to solve the Sudoku board using naked singles and crosshatching
 bool solveNakedSingle(SudokuBoard& board, sf::RenderWindow& window) {
+    // Continue solving until the board is solved
     while (true) {
+        // Try to find and fill naked singles
         if (!findNakedSingle(board, window)) {
+            // If no naked singles are found, move on to crosshatching strategy
             solveCrossHatch(board, window);
-            break;
+            break; // Break out of the loop once crosshatching is done
         }
     }
-    return board.isSolved();
+    return board.isSolved(); // Return whether the board is solved
 }
+
 
 bool solveHiddenSingles(SudokuBoard& board){
     //each cell by default has values that could go there
