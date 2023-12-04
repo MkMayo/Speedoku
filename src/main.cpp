@@ -200,7 +200,6 @@ void drawSudokuBoard(SudokuBoard board, sf::RenderWindow& window, int algo) {
     }
     window.display();
 }
-//clone of other board function to test multiple boards
 
 // Solves the board using Backtracking
 bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window, bool singles) {
@@ -210,7 +209,6 @@ bool solveBacktracking(SudokuBoard& board, sf::RenderWindow& window, bool single
     for(unsigned int i = 1; i <= 9; i++) {
         if(board.isSafe(i, coords[0], coords[1])) {
             board.place(i, coords[0], coords[1]);
-            // PLACE DRAW FUNC HERE
             if(!singles){drawSudokuBoard(board, window, 0);}
             else{
                 drawSudokuBoard(board, window, 3);
@@ -238,7 +236,6 @@ bool solveCrossHatch(SudokuBoard& board, sf::RenderWindow& window) {
     options = mergeSort(options);
     for(int i : get<2>(options[0])) {
         board.place(i, get<0>(options[0]), get<1>(options[0]));
-        // PLACE DRAW FUNC HERE
         drawSudokuBoard(board, window, 1);
         if(solveCrossHatch(board, window)) return true;
         board.place(0, get<0>(options[0]), get<1>(options[0]));
